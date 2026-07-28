@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Atlas — Learning Path Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: #12141c;
+  --bg-alt: #171a24;
+  --surface: #1b1f2b;
+  --surface-hi: #232838;
+  --line: #2a2f3f;
+  --gold: #e8b54d;
+  --gold-dim: #b98f3d;
+  --teal: #5fd8c9;
+  --text: #f1efea;
+  --text-dim: #9297a8;
+  --text-faint: #5c6072;
+  --radius: 14px;
+  --ease: cubic-bezier(.22,1,.36,1);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01ms !important; transition-duration:.01ms !important;}
+}
+
+/* ---------- background atmosphere ---------- */
+.atlas-bg{
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 900px 500px at 15% -5%, rgba(232,181,77,.09), transparent 60%),
+    radial-gradient(ellipse 700px 600px at 110% 20%, rgba(95,216,201,.07), transparent 60%);
+}
+.grain{
+  position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- layout ---------- */
+.shell{ position:relative; z-index:2; display:flex; min-height:100vh; }
+
+.sidebar{
+  width:250px; flex-shrink:0;
+  background: var(--bg-alt);
+  border-right:1px solid var(--line);
+  display:flex; flex-direction:column;
+  padding: 28px 20px;
+  position:sticky; top:0; height:100vh;
+}
+.brand{
+  display:flex; align-items:center; gap:10px; margin-bottom:40px;
+  font-family:'Fraunces', serif; font-size:1.35rem; font-weight:600; letter-spacing:.02em;
+}
+.brand-mark{
+  width:30px; height:30px; border-radius:8px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Fraunces',serif; font-weight:700; color:#1b1200; font-size:.95rem;
+  box-shadow: 0 0 0 1px rgba(232,181,77,.3), 0 4px 14px rgba(232,181,77,.25);
+}
+.nav-group{ margin-bottom: 28px; }
+.nav-label{
+  font-size:.68rem; text-transform:uppercase; letter-spacing:.12em;
+  color: var(--text-faint); margin-bottom:10px; padding-left:12px; font-weight:600;
+}
+.nav-item{
+  display:flex; align-items:center; gap:12px;
+  padding:10px 12px; border-radius:10px; cursor:pointer;
+  color: var(--text-dim); font-size:.9rem; font-weight:500;
+  position:relative; transition: color .25s var(--ease), background .25s var(--ease);
+  margin-bottom:2px; user-select:none;
+}
+.nav-item svg{ width:17px; height:17px; opacity:.85; flex-shrink:0; }
+.nav-item:hover{ background: var(--surface); color: var(--text); }
+.nav-item.active{ background: var(--surface-hi); color: var(--gold); }
+.nav-item.active::before{
+  content:''; position:absolute; left:-20px; top:50%; transform:translateY(-50%);
+  width:3px; height:18px; background: var(--gold); border-radius:2px;
+}
+.nav-count{
+  margin-left:auto; font-size:.68rem; background: var(--surface-hi);
+  color: var(--text-dim); padding:2px 7px; border-radius:20px; font-weight:600;
+}
+.nav-item.active .nav-count{ background: rgba(232,181,77,.18); color: var(--gold); }
+
+.sidebar-foot{
+  margin-top:auto; padding-top:20px; border-top:1px solid var(--line);
+  display:flex; align-items:center; gap:10px;
+}
+.avatar{
+  width:34px; height:34px; border-radius:50%;
+  background: linear-gradient(135deg,#4a5468,#2b3140);
+  display:flex; align-items:center; justify-content:center;
+  font-size:.8rem; font-weight:700; color:var(--text);
+  border:1px solid var(--line);
+}
+.sidebar-foot .who{ font-size:.82rem; font-weight:600; }
+.sidebar-foot .role{ font-size:.72rem; color:var(--text-faint); }
+
+/* ---------- main ---------- */
+.main{ flex:1; min-width:0; padding: 34px 44px 60px; }
+.topbar{
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:34px;
+  opacity:0; animation: rise .6s var(--ease) forwards;
+}
+.greeting h1{
+  font-family:'Fraunces', serif; font-weight:600; font-size:1.9rem; letter-spacing:-.01em;
+}
+.greeting p{ color:var(--text-dim); font-size:.92rem; margin-top:4px; }
+.search{
+  display:flex; align-items:center; gap:9px;
+  background: var(--surface); border:1px solid var(--line); border-radius:11px;
+  padding:9px 14px; width:280px; color:var(--text-faint); font-size:.85rem;
+  transition: border-color .25s var(--ease), box-shadow .25s var(--ease);
+}
+.search:focus-within{ border-color: var(--gold-dim); box-shadow:0 0 0 3px rgba(232,181,77,.1); }
+.search input{ background:none; border:none; outline:none; color:var(--text); font-size:.85rem; width:100%; font-family:inherit;}
+.search svg{ width:15px; height:15px; flex-shrink:0; }
+
+section.view{ display:none; }
+section.view.active{ display:block; }
+
+/* ---------- stat strip ---------- */
+.stats{
+  display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; margin-bottom:34px;
+}
+.stat-card{
+  background: var(--surface); border:1px solid var(--line); border-radius: var(--radius);
+  padding:18px 20px; opacity:0; transform: translateY(14px);
+  animation: rise .6s var(--ease) forwards;
+  transition: border-color .3s var(--ease), transform .3s var(--ease);
+}
+.stat-card:hover{ border-color: var(--gold-dim); transform: translateY(-3px); }
+.stat-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;}
+.stat-icon{
+  width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+  background: rgba(232,181,77,.12); color: var(--gold);
+}
+.stat-icon svg{ width:16px; height:16px; }
+.stat-trend{ font-size:.72rem; font-weight:600; color: var(--teal); }
+.stat-num{ font-family:'JetBrains Mono', monospace; font-size:1.8rem; font-weight:600; letter-spacing:-.02em; }
+.stat-name{ color:var(--text-dim); font-size:.78rem; margin-top:3px; }
+
+/* ---------- panel grid ---------- */
+.panel-grid{ display:grid; grid-template-columns: 1.55fr 1fr; gap:20px; align-items:start; }
+.panel{
+  background: var(--surface); border:1px solid var(--line); border-radius: var(--radius);
+  padding:24px; opacity:0; transform: translateY(14px); animation: rise .6s var(--ease) forwards;
+}
+.panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.panel-head h2{ font-family:'Fraunces', serif; font-size:1.12rem; font-weight:600; }
+.link-out{ font-size:.78rem; color: var(--gold); cursor:pointer; font-weight:600; }
+
+/* ---- signature: the learning path (winding trail) ---- */
+.path-wrap{ position:relative; padding: 6px 4px 4px; }
+.path-svg{ width:100%; height:auto; display:block; }
+.trail-line{
+  fill:none; stroke: var(--line); stroke-width:3; stroke-linecap:round;
+}
+.trail-progress{
+  fill:none; stroke: url(#trailGrad); stroke-width:3; stroke-linecap:round;
+  stroke-dasharray: 1000; stroke-dashoffset:1000;
+  animation: trail-draw 1.8s var(--ease) forwards .3s;
+}
+@keyframes trail-draw{ to{ stroke-dashoffset: var(--offset, 260); } }
+.waypoint{ cursor:pointer; }
+.waypoint circle.wp-ring{ fill: var(--bg-alt); stroke: var(--line); stroke-width:2; transition: stroke .3s, r .3s; }
+.waypoint.done circle.wp-ring{ stroke: var(--gold); }
+.waypoint.current circle.wp-ring{ stroke: var(--teal); }
+.waypoint circle.wp-dot{ fill: var(--text-faint); }
+.waypoint.done circle.wp-dot{ fill: var(--gold); }
+.waypoint.current circle.wp-dot{ fill: var(--teal); }
+.waypoint:hover circle.wp-ring{ r: 13; }
+.wp-label{ font-size:9.5px; fill: var(--text-dim); font-family:'Inter',sans-serif; font-weight:600; }
+.wp-label.on{ fill: var(--text); }
+
+/* ---------- course cards ---------- */
+.course-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin-top: 6px; }
+.course-card{
+  background: var(--surface); border:1px solid var(--line); border-radius: var(--radius);
+  overflow:hidden; cursor:pointer; opacity:0; transform: translateY(16px);
+  animation: rise .6s var(--ease) forwards;
+  transition: transform .35s var(--ease), border-color .35s var(--ease), box-shadow .35s var(--ease);
+}
+.course-card:hover{ transform: translateY(-6px); border-color: var(--gold-dim); box-shadow: 0 18px 40px -18px rgba(0,0,0,.6); }
+.course-cover{
+  height:88px; position:relative; display:flex; align-items:flex-end; padding:10px 14px;
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+}
+.course-cover::after{
+  content:''; position:absolute; inset:0;
+  background: repeating-linear-gradient(115deg, rgba(255,255,255,.06) 0 2px, transparent 2px 14px);
+}
+.course-tag{
+  position:relative; z-index:1; font-size:.65rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.08em; background: rgba(0,0,0,.35); color:#fff; padding:3px 8px; border-radius:6px;
+  backdrop-filter: blur(2px);
+}
+.course-body{ padding:16px; }
+.course-title{ font-weight:600; font-size:.95rem; margin-bottom:4px; }
+.course-meta{ color: var(--text-faint); font-size:.76rem; margin-bottom:14px; }
+.progress-row{ display:flex; align-items:center; gap:10px; }
+.progress-track{ flex:1; height:6px; border-radius:4px; background: var(--surface-hi); overflow:hidden; }
+.progress-fill{ height:100%; border-radius:4px; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); width:0%; transition: width 1.1s var(--ease); }
+.progress-pct{ font-family:'JetBrains Mono',monospace; font-size:.72rem; color: var(--text-dim); min-width:32px; text-align:right; }
+
+/* ---------- ring stat (mini widget) ---------- */
+.ring-wrap{ display:flex; align-items:center; gap:18px; }
+svg.ring{ transform: rotate(-90deg); }
+.ring-bg{ fill:none; stroke: var(--surface-hi); stroke-width:9; }
+.ring-fg{ fill:none; stroke: url(#ringGrad); stroke-width:9; stroke-linecap:round; stroke-dasharray: 251; stroke-dashoffset:251; animation: ring-draw 1.4s var(--ease) forwards .4s; }
+@keyframes ring-draw{ to{ stroke-dashoffset: var(--ring-offset, 60); } }
+.ring-num{ font-family:'Fraunces',serif; font-size:1.5rem; font-weight:600; }
+.ring-legend{ display:flex; flex-direction:column; gap:9px; font-size:.8rem; }
+.ring-legend .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:7px; }
+
+/* ---------- assignment list ---------- */
+.task-item{
+  display:flex; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid var(--line);
+}
+.task-item:last-child{ border-bottom:none; }
+.task-check{
+  width:19px; height:19px; border-radius:6px; border:1.5px solid var(--text-faint); flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; cursor:pointer; transition: all .25s var(--ease);
+}
+.task-check svg{ width:11px; height:11px; opacity:0; transform: scale(.5); transition: all .2s var(--ease); }
+.task-check.checked{ background: var(--gold); border-color: var(--gold); }
+.task-check.checked svg{ opacity:1; transform: scale(1); }
+.task-body{ flex:1; min-width:0; }
+.task-title{ font-size:.86rem; font-weight:500; }
+.task-item.done .task-title{ color: var(--text-faint); text-decoration: line-through; }
+.task-due{ font-size:.72rem; color: var(--text-faint); margin-top:2px; }
+.task-badge{ font-size:.68rem; font-weight:700; padding:3px 8px; border-radius:20px; }
+
+@keyframes rise{ to{ opacity:1; transform: translateY(0); } }
+@keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+
+/* modal */
+.modal-bg{
+  position:fixed; inset:0; background: rgba(6,7,11,.6); backdrop-filter: blur(4px);
+  display:flex; align-items:center; justify-content:center; z-index:50;
+  opacity:0; pointer-events:none; transition: opacity .3s var(--ease);
+}
+.modal-bg.open{ opacity:1; pointer-events:all; }
+.modal{
+  background: var(--bg-alt); border:1px solid var(--line); border-radius:18px; width:420px; max-width:90vw;
+  padding:26px; transform: scale(.94) translateY(10px); transition: transform .35s var(--ease);
+}
+.modal-bg.open .modal{ transform: scale(1) translateY(0); }
+.modal h3{ font-family:'Fraunces',serif; font-size:1.2rem; margin-bottom:6px; }
+.modal p{ color:var(--text-dim); font-size:.86rem; line-height:1.5; margin-bottom:18px; }
+.modal-close{ float:right; cursor:pointer; color:var(--text-faint); font-size:1.1rem; }
+.btn{
+  background: linear-gradient(135deg, var(--gold), var(--gold-dim)); color:#1b1200; border:none;
+  padding:10px 18px; border-radius:10px; font-weight:700; font-size:.85rem; cursor:pointer;
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+}
+.btn:hover{ transform: translateY(-2px); box-shadow: 0 10px 24px -10px rgba(232,181,77,.5); }
+
+@media (max-width: 980px){
+  .sidebar{ display:none; }
+  .panel-grid{ grid-template-columns: 1fr; }
+  .stats{ grid-template-columns: repeat(2,1fr); }
+  .course-grid{ grid-template-columns: repeat(2,1fr); }
+  .main{ padding:24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="atlas-bg"></div>
+<div class="grain"></div>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">A</span> Atlas</div>
+
+    <div class="nav-group">
+      <div class="nav-label">Learning</div>
+      <div class="nav-item active" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" data-view="courses">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+        Courses <span class="nav-count">6</span>
+      </div>
+      <div class="nav-item" data-view="assignments">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Assignments <span class="nav-count">4</span>
+      </div>
+      <div class="nav-item" data-view="grades">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/></svg>
+        Grades
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Community</div>
+      <div class="nav-item" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Cohort
+      </div>
+      <div class="nav-item" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Discussions
+      </div>
+    </div>
+
+    <div class="sidebar-foot">
+      <div class="avatar">MJ</div>
+      <div>
+        <div class="who">Maya Jensen</div>
+        <div class="role">Cohort 12 · Data Track</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <div class="topbar">
+      <div class="greeting">
+        <h1>Good evening, Maya</h1>
+        <p>You're 3 waypoints from finishing the Data Track.</p>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input placeholder="Search courses, lessons, people…" />
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <section class="view active" id="view-dashboard">
+
+      <div class="stats">
+        <div class="stat-card" style="animation-delay:.05s">
+          <div class="stat-top">
+            <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/></svg></div>
+            <span class="stat-trend">↑ 12%</span>
+          </div>
+          <div class="stat-num" data-count="87">0</div>
+          <div class="stat-name">Overall progress %</div>
+        </div>
+        <div class="stat-card" style="animation-delay:.12s">
+          <div class="stat-top">
+            <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg></div>
+            <span class="stat-trend">↑ 4h</span>
+          </div>
+          <div class="stat-num" data-count="126">0</div>
+          <div class="stat-name">Hours studied this month</div>
+        </div>
+        <div class="stat-card" style="animation-delay:.19s">
+          <div class="stat-top">
+            <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 14 2.5 2.5L16 11"/><circle cx="12" cy="12" r="9"/></svg></div>
+            <span class="stat-trend" style="color:var(--gold)">streak</span>
+          </div>
+          <div class="stat-num" data-count="14">0</div>
+          <div class="stat-name">Day streak</div>
+        </div>
+        <div class="stat-card" style="animation-delay:.26s">
+          <div class="stat-top">
+            <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a4 4 0 0 0 4-4V5a4 4 0 0 0-8 0v6a4 4 0 0 0 4 4Z"/><path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 19v3"/></svg></div>
+            <span class="stat-trend">top 9%</span>
+          </div>
+          <div class="stat-num" data-count="4">0</div>
+          <div class="stat-name">Certificates earned</div>
+        </div>
+      </div>
+
+      <div class="panel-grid">
+        <div class="panel" style="animation-delay:.3s">
+          <div class="panel-head">
+            <h2>Your learning path — Data Track</h2>
+            <span class="link-out" onclick="openModal('Full syllabus','The complete 9-waypoint Data Track curriculum, from statistics fundamentals to deployed ML pipelines.')">View syllabus</span>
+          </div>
+          <div class="path-wrap">
+            <svg class="path-svg" viewBox="0 0 620 160" id="trailSvg">
+              <defs>
+                <linearGradient id="trailGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#e8b54d"/>
+                  <stop offset="100%" stop-color="#5fd8c9"/>
+                </linearGradient>
+              </defs>
+              <path class="trail-line" d="M20,110 C90,20 150,150 230,80 S370,10 430,90 S560,140 600,50"/>
+              <path class="trail-progress" style="--offset:120" d="M20,110 C90,20 150,150 230,80 S370,10 430,90 S560,140 600,50"/>
+              <!-- waypoints placed roughly along the curve -->
+              <g class="waypoint done" data-title="Statistics Foundations" data-info="Descriptive stats, distributions, and hypothesis testing — completed with a 96% score.">
+                <circle class="wp-ring" cx="20" cy="110" r="10"/><circle class="wp-dot" cx="20" cy="110" r="4"/>
+                <text class="wp-label on" x="20" y="135" text-anchor="middle">Stats</text>
+              </g>
+              <g class="waypoint done" data-title="Python for Data" data-info="NumPy, Pandas, and vectorized data wrangling — completed with a 91% score.">
+                <circle class="wp-ring" cx="150" cy="150" r="10"/><circle class="wp-dot" cx="150" cy="150" r="4"/>
+                <text class="wp-label on" x="150" y="30" text-anchor="middle">Python</text>
+              </g>
+              <g class="waypoint current" data-title="Machine Learning I" data-info="Supervised learning, regression, and classification. In progress — 62% complete.">
+                <circle class="wp-ring" cx="290" cy="60" r="11"/><circle class="wp-dot" cx="290" cy="60" r="4.5"/>
+                <text class="wp-label on" x="290" y="42" text-anchor="middle">ML I</text>
+              </g>
+              <g class="waypoint" data-title="Deep Learning" data-info="Neural networks, backpropagation, and CNNs. Unlocks after Machine Learning I.">
+                <circle class="wp-ring" cx="430" cy="90" r="10"/><circle class="wp-dot" cx="430" cy="90" r="4"/>
+                <text class="wp-label" x="430" y="115" text-anchor="middle">DL</text>
+              </g>
+              <g class="waypoint" data-title="Deployment & MLOps" data-info="Shipping models to production with monitoring and CI/CD.">
+                <circle class="wp-ring" cx="600" cy="50" r="10"/><circle class="wp-dot" cx="600" cy="50" r="4"/>
+                <text class="wp-label" x="600" y="30" text-anchor="middle">Deploy</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="panel" style="animation-delay:.36s">
+          <div class="panel-head"><h2>This week</h2></div>
+          <div class="ring-wrap">
+            <svg class="ring" width="90" height="90" viewBox="0 0 90 90">
+              <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e8b54d"/><stop offset="100%" stop-color="#5fd8c9"/></linearGradient></defs>
+              <circle class="ring-bg" cx="45" cy="45" r="40"/>
+              <circle class="ring-fg" cx="45" cy="45" r="40" style="--ring-offset:70"/>
+            </svg>
+            <div class="ring-legend">
+              <div><span class="ring-num" style="font-size:1rem">8.5</span> hrs logged</div>
+              <div><span class="dot" style="background:var(--gold)"></span>Video lessons — 4.5h</div>
+              <div><span class="dot" style="background:var(--teal)"></span>Practice sets — 4h</div>
+            </div>
+          </div>
+          <div style="margin-top:20px; border-top:1px solid var(--line); padding-top:16px;">
+            <div class="task-item">
+              <div class="task-check" onclick="toggleTask(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1200" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+              <div class="task-body"><div class="task-title">Submit regression problem set</div><div class="task-due">Due tomorrow, 11:59 PM</div></div>
+            </div>
+            <div class="task-item">
+              <div class="task-check" onclick="toggleTask(this)"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1200" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+              <div class="task-body"><div class="task-title">Watch: Gradient Descent Intuition</div><div class="task-due">18 min · not started</div></div>
+            </div>
+            <div class="task-item done">
+              <div class="task-check checked"><svg viewBox="0 0 24 24" fill="none" stroke="#1b1200" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+              <div class="task-body"><div class="task-title">Quiz: Bias–variance tradeoff</div><div class="task-due">Completed · 94%</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-head" style="margin-top:34px;">
+        <h2 style="font-family:'Fraunces',serif; font-size:1.12rem;">Continue where you left off</h2>
+        <span class="link-out" onclick="switchView('courses')">All courses →</span>
+      </div>
+      <div class="course-grid" id="courseGrid"></div>
+    </section>
+
+    <!-- COURSES -->
+    <section class="view" id="view-courses">
+      <div class="panel-head"><h2 style="font-family:'Fraunces',serif; font-size:1.3rem;">All courses</h2></div>
+      <div class="course-grid" id="courseGridAll"></div>
+    </section>
+
+    <!-- ASSIGNMENTS -->
+    <section class="view" id="view-assignments">
+      <div class="panel" style="animation:none; opacity:1;">
+        <div class="panel-head"><h2>Assignments</h2></div>
+        <div id="assignmentList"></div>
+      </div>
+    </section>
+
+    <!-- GRADES -->
+    <section class="view" id="view-grades">
+      <div class="panel" style="animation:none; opacity:1;">
+        <div class="panel-head"><h2>Grade summary</h2></div>
+        <div id="gradesList"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <span class="modal-close" onclick="closeModal()">✕</span>
+    <h3 id="modalTitle">Title</h3>
+    <p id="modalBody">Body</p>
+    <button class="btn" onclick="closeModal()">Got it</button>
+  </div>
+</div>
+
+<script>
+/* ---------------- data ---------------- */
+const courses = [
+  {title:"Machine Learning I", meta:"12 lessons · Instructor Rao", pct:62, tag:"In progress", c1:"#e8b54d", c2:"#8a5a1e"},
+  {title:"Python for Data", meta:"18 lessons · Instructor Choi", pct:100, tag:"Completed", c1:"#5fd8c9", c2:"#1f7166"},
+  {title:"Statistics Foundations", meta:"14 lessons · Instructor Osei", pct:100, tag:"Completed", c1:"#8a7ee8", c2:"#3d3474"},
+  {title:"Deep Learning", meta:"20 lessons · Instructor Rao", pct:8, tag:"Just started", c1:"#e87d9c", c2:"#7a2c42"},
+  {title:"Data Visualization", meta:"9 lessons · Instructor Lund", pct:40, tag:"In progress", c1:"#6fa8dc", c2:"#274a6b"},
+  {title:"Deployment & MLOps", meta:"11 lessons · Instructor Choi", pct:0, tag:"Locked", c1:"#7a8290", c2:"#33373f"},
+];
+
+const assignments = [
+  {title:"Submit regression problem set", due:"Due tomorrow, 11:59 PM", badge:"Due soon", color:"#e8b54d"},
+  {title:"Peer review: classification notebook", due:"Due in 3 days", badge:"Upcoming", color:"#5fd8c9"},
+  {title:"Final project proposal", due:"Due in 9 days", badge:"Upcoming", color:"#5fd8c9"},
+  {title:"Quiz: Bias–variance tradeoff", due:"Completed · scored 94%", badge:"Done", color:"#9297a8"},
+];
+
+const grades = [
+  {title:"Statistics Foundations", score:"96%"},
+  {title:"Python for Data", score:"91%"},
+  {title:"Quiz: Bias–variance tradeoff", score:"94%"},
+  {title:"Problem Set 3 — Linear Models", score:"88%"},
+];
+
+/* ---------------- render courses ---------------- */
+function courseCard(c){
+  return `<div class="course-card" onclick="openModal('${c.title}','${c.meta}. Currently ${c.pct}% complete.')">
+    <div class="course-cover" style="--c1:${c.c1};--c2:${c.c2}"><span class="course-tag">${c.tag}</span></div>
+    <div class="course-body">
+      <div class="course-title">${c.title}</div>
+      <div class="course-meta">${c.meta}</div>
+      <div class="progress-row">
+        <div class="progress-track"><div class="progress-fill" data-pct="${c.pct}"></div></div>
+        <div class="progress-pct">${c.pct}%</div>
+      </div>
+    </div>
+  </div>`;
+}
+document.getElementById('courseGrid').innerHTML = courses.slice(0,3).map(courseCard).join('');
+document.getElementById('courseGridAll').innerHTML = courses.map(courseCard).join('');
+
+document.querySelectorAll('.course-card').forEach((el, i)=>{
+  el.style.animationDelay = (0.05*i) + 's';
+});
+
+function animateFills(){
+  document.querySelectorAll('.progress-fill').forEach(el=>{
+    const pct = el.getAttribute('data-pct');
+    requestAnimationFrame(()=> el.style.width = pct + '%');
+  });
+}
+setTimeout(animateFills, 250);
+
+/* ---------------- assignments / grades ---------------- */
+document.getElementById('assignmentList').innerHTML = assignments.map(a=>`
+  <div class="task-item">
+    <div class="task-check ${a.badge==='Done'?'checked':''}" onclick="toggleTask(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1b1200" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <div class="task-body"><div class="task-title">${a.title}</div><div class="task-due">${a.due}</div></div>
+    <div class="task-badge" style="background:${a.color}22; color:${a.color}">${a.badge}</div>
+  </div>`).join('');
+
+document.getElementById('gradesList').innerHTML = grades.map(g=>`
+  <div class="task-item">
+    <div class="task-body"><div class="task-title">${g.title}</div></div>
+    <div class="task-badge" style="background:rgba(232,181,77,.15); color:var(--gold)">${g.score}</div>
+  </div>`).join('');
+
+/* ---------------- nav switching ---------------- */
+function switchView(view){
+  document.querySelectorAll('.nav-item').forEach(n=> n.classList.toggle('active', n.dataset.view===view));
+  document.querySelectorAll('.view').forEach(v=> v.classList.remove('active'));
+  const target = document.getElementById('view-'+view);
+  target.classList.add('active');
+  target.querySelectorAll('.panel, .stat-card, .course-card').forEach((el,i)=>{
+    el.style.animation = 'none'; void el.offsetWidth;
+    el.style.animation = '';
+  });
+}
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=> switchView(item.dataset.view));
+});
+
+/* ---------------- counters ---------------- */
+function animateCounters(){
+  document.querySelectorAll('.stat-num').forEach(el=>{
+    const target = parseInt(el.getAttribute('data-count'));
+    let cur = 0;
+    const step = Math.max(1, Math.round(target/40));
+    const tick = ()=>{
+      cur += step;
+      if(cur >= target){ el.textContent = target; return; }
+      el.textContent = cur;
+      requestAnimationFrame(tick);
+    };
+    tick();
+  });
+}
+setTimeout(animateCounters, 400);
+
+/* ---------------- tasks ---------------- */
+function toggleTask(el){
+  el.classList.toggle('checked');
+  el.closest('.task-item').classList.toggle('done');
+}
+
+/* ---------------- waypoints ---------------- */
+document.querySelectorAll('.waypoint').forEach(wp=>{
+  wp.addEventListener('click', ()=>{
+    openModal(wp.dataset.title, wp.dataset.info);
+  });
+});
+
+/* ---------------- modal ---------------- */
+function openModal(title, body){
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').textContent = body;
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeModal(){ document.getElementById('modalBg').classList.remove('open'); }
+document.getElementById('modalBg').addEventListener('click', e=>{
+  if(e.target.id === 'modalBg') closeModal();
+});
+</script>
+</body>
+</html>
